@@ -8,6 +8,8 @@ pipeline {
     environment {
         REGISTRY = 'registry.assign.aba-hadi.300.ops:5000'
         IMAGE    = "${REGISTRY}/bind-secondary"
+        // c1's /tmp is a small RAM disk - keep big temp files on the real disk
+        TMPDIR   = '/home/jenkins/tmp'
     }
 
     stages {
@@ -19,6 +21,28 @@ pipeline {
                         podman build -t "$IMAGE:$BUILD_NUMBER" .
                         rm -f xfer.key
                     '''
+                }
+            }
+        }
+
+        // BONUS: CVE scan before push.
+        // Decision: FAIL the build on HIGH/CRITICAL CVEs that have a fix
+        // (--ignore-unfixed), so a vulnerable image never reaches the registry.
+        // The report is always saved as a build artifact.
+        stage('Scan') {
+            steps {
+                sh '''
+                    mkdir -p "$TMPDIR"
+                    podman save -o "$TMPDIR/image.tar" "$IMAGE:$BUILD_NUMBER"
+                    trivy image --input "$TMPDIR/image.tar" --scanners vuln \
+                        --severity HIGH,CRITICAL --ignore-unfixed --no-progress \
+                        --exit-code 1 --output trivy-report.txt
+                '''
+            }
+            post {
+                always {
+                    sh 'cat trivy-report.txt || true; rm -f "$TMPDIR/image.tar"'
+                    archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
                 }
             }
         }

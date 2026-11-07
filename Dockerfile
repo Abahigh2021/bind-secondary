@@ -1,5 +1,5 @@
 FROM docker.io/library/ubuntu:26.04
-RUN apt-get update && \
+RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends bind9 bind9utils && \
     rm -rf /var/lib/apt/lists/*
 COPY named.conf.options /etc/bind/
