@@ -1,0 +1,25 @@
+acl authorized_networks { 192.168.12.0/24; };
+acl podman_net { 10.88.0.0/16; };
+
+options {
+    directory "/var/cache/bind";
+
+    recursion no;
+    allow-recursion { none; };
+    allow-query-cache { none; };
+    allow-query { localhost; authorized_networks; podman_net; };
+    allow-transfer { localhost; 192.168.12.15; podman_net; };
+    notify no;
+
+    dnssec-validation no;
+    listen-on { any; };
+    listen-on-v6 { none; };
+
+    blackhole {
+        !10.88.0.0/16;
+        10.0.0.0/8;
+        172.16.0.0/12;
+        224.0.0.0/4;
+        169.254.0.0/16;
+    };
+};

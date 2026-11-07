@@ -1,0 +1,17 @@
+include "/etc/bind/xfer.key";
+
+server 192.168.12.10 {
+    keys { "xfer-key"; };
+};
+
+zone "lab.aba-hadi.300.ops" {
+    type secondary;
+    primaries { 192.168.12.10; };
+    file "/var/cache/bind/db.lab.aba-hadi.300.ops";
+};
+
+zone "12.168.192.in-addr.arpa" {
+    type secondary;
+    primaries { 192.168.12.10; };
+    file "/var/cache/bind/db.12.168.192";
+};
